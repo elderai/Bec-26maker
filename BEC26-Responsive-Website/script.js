@@ -131,6 +131,26 @@ function draw() {
   ctx.font = '132px Anton, Impact, sans-serif';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText('’26', 920, 530);
+
+  // Event details sit in the lower corners, as in the final poster.
+  function fittedText(value, x, y, size, width, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.font = `${size}px Anton, Impact, sans-serif`;
+    ctx.textBaseline = 'alphabetic';
+    const measured = ctx.measureText(value).width;
+    ctx.translate(x, y);
+    if (measured > width) ctx.scale(width / measured, 1);
+    ctx.fillText(value, 0, 0);
+    ctx.restore();
+  }
+  fittedText('7–11', 55, 1130, 102, 252, red);
+  fittedText('OCTOBER', 55, 1225, 91, 280, '#111216');
+  fittedText('2026', 55, 1315, 104, 250, red);
+
+  fittedText('THE FORTRESS', 800, 1200, 64, 280, red);
+  fittedText('PLOT 303 LAMINGO ROAD', 800, 1250, 35, 285, '#111216');
+  fittedText('JOS, PLATEAU STATE.', 800, 1294, 37, 280, '#111216');
 }
 
 function setStatus(message, type='') { status.textContent = message; status.dataset.type = type; }
