@@ -1,9 +1,0 @@
-{
-  "name": "bec26-portrait-maker",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {"dev": "vite --host 0.0.0.0", "build": "vite build", "preview": "vite preview --host 0.0.0.0"},
-  "dependencies": {"@imgly/background-removal": "^1.7.0", "@fontsource/anton": "^5.2.8"},
-  "devDependencies": {"vite": "^7.1.0"}
-}
