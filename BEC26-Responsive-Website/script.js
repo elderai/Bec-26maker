@@ -15,23 +15,23 @@ let backgroundRemover;
 let whiteLogo = null;
 const logoImage = new Image();
 logoImage.onload = () => {
-  // The supplied logo has black lettering on a white panel. Keep only its
-  // lettering and turn it white so it sits naturally on dark clothing.
+  // Extract the exact white castle and lettering from the approved poster.
+  // Its original proportions and size are preserved.
   const crop = document.createElement('canvas');
-  crop.width = 610; crop.height = 225;
+  crop.width = 115; crop.height = 65;
   const ink = crop.getContext('2d', {willReadFrequently:true});
-  ink.drawImage(logoImage, 350, 370, 610, 225, 0, 0, 610, 225);
+  ink.drawImage(logoImage, 535, 1310, 115, 65, 0, 0, 115, 65);
   const pixels = ink.getImageData(0, 0, crop.width, crop.height);
   for (let i = 0; i < pixels.data.length; i += 4) {
-    const darkness = 255 - (pixels.data[i] + pixels.data[i + 1] + pixels.data[i + 2]) / 3;
+    const brightness = (pixels.data[i] + pixels.data[i + 1] + pixels.data[i + 2]) / 3;
     pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = 255;
-    pixels.data[i + 3] = Math.round(pixels.data[i + 3] * Math.max(0, (darkness - 70) / 185));
+    pixels.data[i + 3] = Math.round(pixels.data[i + 3] * Math.max(0, Math.min(1, (brightness - 90) / 135)));
   }
   ink.putImageData(pixels, 0, 0);
   whiteLogo = crop;
   draw();
 };
-logoImage.src = './Fort Logo.png';
+logoImage.src = './Fortress-reference.png';
 
 async function cutOut(file) {
   if (!backgroundRemover) {
@@ -173,25 +173,7 @@ function draw() {
   fittedText('JOS, PLATEAU STATE.', 800, 1294, 37, 280, '#111216');
 
   if (whiteLogo && subject) {
-    // Compact white ministry mark at the foot of the portrait.
-    ctx.save();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2.5;
-    ctx.lineJoin = 'miter';
-    ctx.shadowColor = '#171717';
-    ctx.shadowBlur = 3;
-    ctx.beginPath();
-    ctx.moveTo(533,1369); ctx.lineTo(533,1325);
-    ctx.lineTo(539,1325); ctx.lineTo(539,1316);
-    ctx.lineTo(546,1316); ctx.lineTo(546,1321);
-    ctx.lineTo(553,1321); ctx.lineTo(553,1316);
-    ctx.lineTo(560,1316); ctx.lineTo(560,1325);
-    ctx.lineTo(566,1325); ctx.lineTo(566,1369);
-    ctx.moveTo(529,1369); ctx.lineTo(570,1369);
-    ctx.moveTo(544,1369); ctx.lineTo(544,1340); ctx.lineTo(554,1340); ctx.lineTo(554,1369);
-    ctx.stroke();
-    ctx.drawImage(whiteLogo, 568, 1325, 91, 34);
-    ctx.restore();
+    ctx.drawImage(whiteLogo, 535, 1310);
   }
 }
 
