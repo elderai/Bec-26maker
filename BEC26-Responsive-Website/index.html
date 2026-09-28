@@ -29,9 +29,38 @@
     </section>
     <section class="preview" aria-label="Poster preview"><div class="preview-head"><strong>Live preview</strong><span>1120 × 1400 px</span></div><div class="frame"><canvas id="poster" aria-label="BEC 26 portrait poster"></canvas></div><p class="privacy">Your photo is processed in your browser. It is not uploaded to this site.</p></section>
   </main>
-  <footer class="site-credit">designed by <a href="mailto:senpaicrea8ion@gmail.com">senpaicrea8ion@gmail.com</a></footer>
+  <footer class="site-credit">designed by <a class="email-mask" id="credit-email" href="#" aria-label="Reveal designer email">••••••••••••@gmail.com</a></footer>
 </div>
 
   <script type="module" src="./script.js"></script>
+  <script>
+    (() => {
+      const link = document.querySelector('#credit-email');
+      const address = [115,101,110,112,97,105,99,114,101,97,56,105,111,110,64,103,109,97,105,108,46,99,111,109].map(n => String.fromCharCode(n)).join('');
+      let revealed = false;
+      let touchPending = false;
+      function reveal() {
+        revealed = true;
+        link.textContent = address;
+        link.href = 'mailto:' + address;
+        link.setAttribute('aria-label', 'Email ' + address);
+      }
+      function conceal() {
+        revealed = false;
+        link.textContent = '••••••••••••@gmail.com';
+        link.href = '#';
+        link.setAttribute('aria-label', 'Reveal designer email');
+      }
+      link.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') reveal(); });
+      link.addEventListener('pointerdown', event => { touchPending = event.pointerType === 'touch'; });
+      link.addEventListener('pointerleave', event => { if (event.pointerType !== 'touch' && document.activeElement !== link) conceal(); });
+      link.addEventListener('focus', () => { if (!touchPending) reveal(); });
+      link.addEventListener('blur', conceal);
+      link.addEventListener('click', event => {
+        if (!revealed) { event.preventDefault(); reveal(); }
+        touchPending = false;
+      });
+    })();
+  </script>
 </body>
 </html>
