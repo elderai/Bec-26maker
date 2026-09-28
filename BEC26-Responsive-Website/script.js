@@ -51,7 +51,7 @@ function draw() {
   const title = 'BEC';
   const natural = type.measureText(title).width;
   type.save(); type.translate(68,700); type.scale(984/natural,1); type.fillText(title,0,0); type.restore();
-  type.clearRect(890, 375, W - 890, 245);
+  type.clearRect(910, 410, W - 910, 155);
   ctx.drawImage(lettering, 0, 0);
 
   if (subject) {
@@ -76,7 +76,7 @@ function draw() {
   ctx.fillStyle = red;
   ctx.font = '132px Anton, Impact, sans-serif';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText('’26', 902, 530);
+  ctx.fillText('’26', 920, 530);
 }
 
 function setStatus(message, type='') { status.textContent = message; status.dataset.type = type; }
