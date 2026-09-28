@@ -18,9 +18,63 @@ async function cutOut(file) {
     const module = await import('https://esm.sh/@imgly/background-removal@1.7.0?bundle');
     backgroundRemover = module.removeBackground;
   }
-  return backgroundRemover(file, {model:'isnet_quint8', progress:(key,current,total)=>{
+  return backgroundRemover(file, {model:'isnet_fp16', progress:(key,current,total)=>{
     if (total && /fetch|download/i.test(key)) setStatus(`Loading portrait model… ${Math.round(current/total*100)}%`);
   }});
+}
+
+async function isTransparentPNG(file) {
+  if (file.type !== 'image/png') return false;
+  const bitmap = await createImageBitmap(file);
+  const probe = document.createElement('canvas');
+  probe.width = Math.min(bitmap.width, 512);
+  probe.height = Math.min(bitmap.height, 512);
+  const pixels = probe.getContext('2d', {willReadFrequently:true});
+  pixels.drawImage(bitmap, 0, 0, probe.width, probe.height);
+  bitmap.close();
+  const rgba = pixels.getImageData(0, 0, probe.width, probe.height).data;
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] < 250) return true;
+  return false;
+}
+
+async function cleanCutout(blob) {
+  const bitmap = await createImageBitmap(blob);
+  const layer = document.createElement('canvas');
+  const w = layer.width = bitmap.width, h = layer.height = bitmap.height;
+  const context = layer.getContext('2d', {willReadFrequently:true});
+  context.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const image = context.getImageData(0, 0, w, h);
+  const rgba = image.data, count = w * h;
+  const labels = new Uint32Array(count), stack = new Int32Array(count);
+  const sizes = [0];
+  let largest = 0;
+  for (let p = 0; p < count; p++) {
+    if (labels[p] || rgba[p * 4 + 3] < 55) continue;
+    const label = sizes.length;
+    let head = 0, tail = 0;
+    stack[tail++] = p; labels[p] = label;
+    while (head < tail) {
+      const at = stack[head++], x = at % w;
+      let next = at - 1;
+      if (x && !labels[next] && rgba[next * 4 + 3] >= 55) { labels[next] = label; stack[tail++] = next; }
+      next = at + 1;
+      if (x < w - 1 && !labels[next] && rgba[next * 4 + 3] >= 55) { labels[next] = label; stack[tail++] = next; }
+      next = at - w;
+      if (at >= w && !labels[next] && rgba[next * 4 + 3] >= 55) { labels[next] = label; stack[tail++] = next; }
+      next = at + w;
+      if (next < count && !labels[next] && rgba[next * 4 + 3] >= 55) { labels[next] = label; stack[tail++] = next; }
+    }
+    sizes.push(tail); largest = Math.max(largest, tail);
+  }
+  const minimum = Math.max(150, largest * .015);
+  for (let p = 0; p < count; p++) {
+    const a = rgba[p * 4 + 3];
+    rgba[p * 4 + 3] = sizes[labels[p]] >= minimum
+      ? Math.round(Math.min(255, Math.max(0, (a - 55) * 255 / 165))) : 0;
+  }
+  context.putImageData(image, 0, 0);
+  return new Promise((resolve, reject) => layer.toBlob(b => b ? resolve(b) : reject(new Error('Could not clean cutout')), 'image/png'));
 }
 
 const red = '#c90000';
@@ -87,24 +141,20 @@ fileInput.addEventListener('change', async () => {
   const file = fileInput.files?.[0]; if (!file) return;
   if (!file.type.startsWith('image/')) { setStatus('Choose a JPG, PNG, or WebP image.','error'); return; }
   if (file.size > 15*1024*1024) { setStatus('Choose an image smaller than 15 MB.','error'); return; }
-  setBusy(true); setStatus('Removing the background. The first run downloads the model and may take a minute…');
+  setBusy(true); setStatus('Preparing your photo. The first background removal may take a minute…');
   try {
     let result;
-    try { result = await cutOut(file); }
-    catch (error) {
-      if (file.type !== 'image/png') throw error;
-      result = file;
-      setStatus('Using your PNG as supplied. For automatic cutout, check your internet connection.');
-    }
+    const transparent = await isTransparentPNG(file);
+    result = transparent ? file : await cleanCutout(await cutOut(file));
     const url = URL.createObjectURL(result);
     const img = await imageFromURL(url);
     if (subjectURL) URL.revokeObjectURL(subjectURL);
     subjectURL=url; subject=img;
-    setStatus('Ready. Adjust your portrait and download the PNG.','success');
+    setStatus(transparent ? 'Transparent PNG loaded without changing its cutout. Adjust and download.' : 'Background cleaned. Adjust your portrait and download the PNG.','success');
     draw();
   } catch(err) {
     console.error(err);
-    setStatus('Background removal could not load. Try a transparent PNG, or check your internet connection.','error');
+    setStatus('Background removal could not finish. Try a transparent PNG from remove.bg, or check your internet connection.','error');
   } finally { setBusy(false); fileInput.value=''; }
 });
 
