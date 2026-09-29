@@ -161,6 +161,10 @@ function draw() {
     const measured = ctx.measureText(value).width;
     ctx.translate(x, y);
     if (measured > width) ctx.scale(width / measured, 1);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 7;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(value, 0, 0);
     ctx.fillText(value, 0, 0);
     ctx.restore();
   }
