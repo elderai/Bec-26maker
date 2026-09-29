@@ -134,8 +134,8 @@ function draw() {
     const imageWidth = subject.width / subject.height * imageHeight;
     const x = W/2 - imageWidth/2 + Number(position.value);
     const y = H - imageHeight + 10;
-    // Preserve photographic texture; only desaturate the subject.
-    ctx.save(); ctx.filter = 'grayscale(1) contrast(1.04)';
+    // Retain the photo's original colors, as in the Rose and Debby posters.
+    ctx.save();
     ctx.drawImage(subject,x,y,imageWidth,imageHeight);
     ctx.restore();
   } else {
